@@ -6,6 +6,8 @@ from sklearn import preprocessing
 # import xgboost as xgb
 # color = sns.color_palette()
 
+from sklearn.preprocessing import LabelEncoder
+
 # %matplotlib inline
 
 # pd.options.mode.chained_assignment = None  # default='warn'
@@ -55,20 +57,27 @@ for column in usable_columns:
         x_train.drop(column, axis=1, inplace=True) # Column with only one value is useless so we drop it
         x_test.drop(column, axis=1, inplace=True)
     if cardinality > 2: # Column is categorical
-        mapper = lambda x: sum([ord(digit) for digit in x])
-        x_train[column] = x_train[column].apply(mapper)
-        x_test[column] = x_test[column].apply(mapper)
+    # need to find a good cateogorical to numerical mapper
+        # mapper = lambda x: sum([ord(digit) for digit in x])
+        # x_train[column] = x_train[column].apply(mapper)
+        # x_test[column] = x_test[column].apply(mapper)
+
+        
+        # lbl = LabelEncoder()
+        # lbl.fit(list(df_train[column].values) + list(df_test[column].values))
+        # df_train[column] = lbl.transform(list(df_train[column].values))
+        # df_test[column] = lbl.transform(list(df_test[column].values))
 
 # print(x_train.head())
 
 
 
-# for c in train_df.columns:
-#     if train_df[c].dtype == 'object':
+# for c in df_train.columns:
+#     if df_train[c].dtype == 'object':
 #         lbl = LabelEncoder()
-#         lbl.fit(list(train_df[c].values) + list(test_df[c].values))
-#         train_df[c] = lbl.transform(list(train_df[c].values))
-#         test_df[c] = lbl.transform(list(test_df[c].values))
+#         lbl.fit(list(df_train[c].values) + list(df_test[c].values))
+#         df_train[c] = lbl.transform(list(df_train[c].values))
+#         df_test[c] = lbl.transform(list(df_test[c].values))
 
 
 features = df_train.columns[2:]
@@ -87,14 +96,14 @@ print(categorical_features)
 
 # find number of unique categorical feature levels in each feature
 # observe new representation of categoical data
-# for col in categorical_features:
-#     print("Feature {} in train has {} unique values".format(col, len(np.unique(x_train[col]))))
-#     print(np.unique(x_train[col]))
-#
-# for col in categorical_features:
-#     print("Feature {} in test has {} unique values".format(col, len(np.unique(x_test[col]))))
-#     print(np.unique(x_test[col]))
-#
+for col in categorical_features:
+    print("Feature {} in train has {} unique values".format(col, len(np.unique(x_train[col]))))
+    print(np.unique(x_train[col]))
+
+for col in categorical_features:
+    print("Feature {} in test has {} unique values".format(col, len(np.unique(x_test[col]))))
+    print(np.unique(x_test[col]))
+
 # # observe if there are any categorical values that only appear in the test or training
 # for col in categorical_features:
 #     train_less_test = list(set(np.unique(x_train[col])) - set(np.unique(x_test[col])))
