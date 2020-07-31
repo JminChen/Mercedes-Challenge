@@ -8,7 +8,6 @@ from sklearn import preprocessing
 
 from sklearn.preprocessing import LabelEncoder
 
-# %matplotlib inline
 
 # pd.options.mode.chained_assignment = None  # default='warn'
 # pd.options.display.max_columns = 999
@@ -16,6 +15,9 @@ from sklearn.preprocessing import LabelEncoder
 df_train = pd.read_csv("./train.csv")
 df_test = pd.read_csv("./test.csv")
 # print(df_train.head())
+
+print(df_train.info())
+print(df_test.info())
 
 # finding feature types
 dtype_df = df_train.dtypes.reset_index()
@@ -40,7 +42,12 @@ for c in cols:
 # print('Categorical features:', counts[2])
 #
 
-
+#check for missing values
+missing_df = df_train.isnull().sum(axis=0).reset_index()
+missing_df.columns = ['column_name', 'missing_count']
+missing_df = missing_df.loc[missing_df['missing_count']>0]
+missing_df = missing_df.sort_values(by='missing_count')
+print(missing_df)
 
 usable_columns = list(set(df_train.columns) - set(['ID', 'y']))
 
@@ -51,6 +58,8 @@ x_train = df_train[usable_columns]
 x_test = df_test[usable_columns]
 
 
+# remove constant values
+lbl = LabelEncoder()
 for column in usable_columns:
     cardinality = len(np.unique(x_train[column]))
     if cardinality == 1:
@@ -62,7 +71,12 @@ for column in usable_columns:
         # x_train[column] = x_train[column].apply(mapper)
         # x_test[column] = x_test[column].apply(mapper)
 
-        
+# convert categorical features into numeric
+        x_train[column] = lbl.fit_transform(x_train[column])
+        x_test[column] = lbl.fit_transform(x_test[column])
+
+        # x_train[col] = lbl.fit_transform(x_train[col].astype(str))
+
         # lbl = LabelEncoder()
         # lbl.fit(list(df_train[column].values) + list(df_test[column].values))
         # df_train[column] = lbl.transform(list(df_train[column].values))
@@ -80,6 +94,7 @@ for column in usable_columns:
 #         df_test[c] = lbl.transform(list(df_test[c].values))
 
 
+# split features into numeric and categorical
 features = df_train.columns[2:]
 
 numeric_features = []
@@ -92,17 +107,17 @@ for dtype, feature in zip(df_train.dtypes[2:], df_train.columns[2:]):
         categorical_features.append(feature)
     else:
         numeric_features.append(feature)
-print(categorical_features)
+# print(categorical_features)
 
 # find number of unique categorical feature levels in each feature
-# observe new representation of categoical data
-for col in categorical_features:
-    print("Feature {} in train has {} unique values".format(col, len(np.unique(x_train[col]))))
-    print(np.unique(x_train[col]))
-
-for col in categorical_features:
-    print("Feature {} in test has {} unique values".format(col, len(np.unique(x_test[col]))))
-    print(np.unique(x_test[col]))
+# # observe new representation of categoical data
+# for col in categorical_features:
+#     print("Feature {} in train has {} unique values".format(col, len(np.unique(x_train[col]))))
+#     print(np.unique(x_train[col]))
+#
+# for col in categorical_features:
+#     print("Feature {} in test has {} unique values".format(col, len(np.unique(x_test[col]))))
+#     print(np.unique(x_test[col]))
 
 # # observe if there are any categorical values that only appear in the test or training
 # for col in categorical_features:

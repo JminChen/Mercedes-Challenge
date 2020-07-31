@@ -8,11 +8,12 @@ from sklearn import preprocessing
 train_df = pd.read_csv("./train.csv")
 test_df = pd.read_csv("./test.csv")
 
-var_name = "X0"
-col_order = np.sort(train_df[var_name].unique()).tolist()
-plt.figure(figsize=(12,6))
-sns.stripplot(x=var_name, y='y', data=train_df, order=col_order)
-plt.xlabel(var_name, fontsize=12)
-plt.ylabel('y', fontsize=12)
-plt.title("Distribution of y variable with "+var_name, fontsize=15)
-plt.show()
+vars = ["X0","X1","X2","X3","X4","X5","X6","X8"]
+for var_name in vars:
+    col_order = np.sort(train_df[var_name].unique()).tolist()
+    plt.figure(figsize=(12,6))
+    sns.stripplot(x=var_name, y='y', data=train_df, order=col_order)
+    plt.xlabel(var_name, fontsize=12)
+    plt.ylabel('y', fontsize=12)
+    plt.title("Distribution of y variable with "+var_name, fontsize=15)
+    plt.show()
