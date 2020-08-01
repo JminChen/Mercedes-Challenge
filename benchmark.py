@@ -19,6 +19,8 @@ x_train = df_train[usable_columns]
 y_train = df_train['y'].values
 
 x_test = df_test[usable_columns]
+# test set no y values
+# y_test = df_test['y'].values
 
 # remove constant values
 lbl = LabelEncoder()
@@ -47,16 +49,33 @@ xgb_params = {
 }
 
 dtrain = xgb.DMatrix(x_train, y_train, feature_names=x_train.columns.values)
-model = xgb.train(dict(xgb_params, silent=0), dtrain, num_boost_round=100, feval=xgb_r2_score, maximize=True)
 
-'''R2 Score on the entire Train data when averaging'''
+# hurr durr df_test has categoiral values still
+dtest = xgb.DMatrix(x_test)
+model = xgb.train(dict(xgb_params, silent=0), dtrain, num_boost_round=100, feval=xgb_r2_score, maximize=True)
+y_predict = model.predict(dtest)
+'''R2 Score on the entire Train data'''
 
 print('R2 score on train data:')
 print(r2_score(y_train,model.predict(dtrain)))
 
+# '''R2 Score on the Test data'''
+#
+# print('R2 score on test data:')
+# print(r2_score(y_test,y_predict))
+
+# '''Average the preditionon test data  of both models then save it on a csv file'''
+#
+# sub = pd.DataFrame()
+# sub['ID'] = df_test['ID']
+# sub['y'] = y_predict
+# sub.to_csv('stacked-models.csv', index=False)
+
 # plot the Distribution of target values
 sns.distplot(y_train[y_train<170],bins=100,kde=False)
 plt.show()
+
+
 
 # plot the important features #
 # fig, ax = plt.subplots(figsize=(12,18))
