@@ -120,22 +120,22 @@ for i in range(1, remaining_comp + 1):
     reduced['tsvd_' + str(i)] = tsvd_train[:, i - 1]
     reduced['grp_' + str(i)] = grp_train[:, i - 1]
     reduced['srp_' + str(i)] = srp_train[:, i - 1]
-    reduced['nmf_' + str(i)] = nmf_train[:, i - 1]
-    reduced['fag_' + str(i)] = fag_train[:, i - 1]
+    # reduced['nmf_' + str(i)] = nmf_train[:, i - 1]
+    # reduced['fag_' + str(i)] = fag_train[:, i - 1]
 
     test_reduced['pca_' + str(i)] = pca_train[:, i - 1]
     test_reduced['ica_' + str(i)] = ica_train[:, i - 1]
     test_reduced['tsvd_' + str(i)] = tsvd_train[:, i - 1]
     test_reduced['grp_' + str(i)] = grp_train[:, i - 1]
     test_reduced['srp_' + str(i)] = srp_train[:, i - 1]
-    test_reduced['nmf_' + str(i)] = nmf_train[:, i - 1]
-    test_reduced['fag_' + str(i)] = fag_train[:, i - 1]
+    # test_reduced['nmf_' + str(i)] = nmf_train[:, i - 1]
+    # test_reduced['fag_' + str(i)] = fag_train[:, i - 1]
 
 # xgboost used since excels at small-medium sized tabular data and regression prediction
 # perhaps try other models random forest,
 xgb_params = {
     'n_trees': 520, # max number of trees
-    'eta': 0.045, # learning rate kept low to prevent overfitting
+    'eta': 0.05, # learning rate kept low to prevent overfitting
     # noted when eta was 0.0045 r squared decreased substantially
     'max_depth': 5, # deepest leaf of tree
     'subsample': 0.7, # percentage of data used in each bunch of trees
@@ -149,7 +149,7 @@ xgb_params = {
 
 # dtrain = xgb.DMatrix(x_train, y_train, feature_names=x_train.columns.values)
 
-rtest = xgb.DMatrix(test_reduced)
+rtest = xgb.DMatrix(test_reduced, feature_names = test_reduced.columns.values)
 # model = xgb.train(dict(xgb_params, silent=0), dtrain, num_boost_round=100, feval=xgb_r2_score, maximize=True)
 
 rtrain = xgb.DMatrix(reduced,y_train, feature_names = reduced.columns.values)

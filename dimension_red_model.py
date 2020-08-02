@@ -117,7 +117,7 @@ for i in range(1, remaining_comp + 1):
 # perhaps try other models random forest,
 xgb_params = {
     'n_trees': 520, # max number of trees
-    'eta': 0.045, # learning rate kept low to prevent overfitting
+    'eta': 0.05, # learning rate kept low to prevent overfitting
     # noted when eta was 0.0045 r squared decreased substantially
     'max_depth': 5, # deepest leaf of tree kept low to prevent overfitting
     'subsample': 0.7, # percentage of data used in each bunch of trees

@@ -5,6 +5,9 @@ import seaborn as sns
 from sklearn import preprocessing
 import xgboost as xgb
 from sklearn.metrics import r2_score
+from numpy import sort
+
+from sklearn.feature_selection import SelectFromModel
 
 # color = sns.color_palette()
 
@@ -63,26 +66,52 @@ xgb_params = {
 }
 
 dtrain = xgb.DMatrix(x_train, y_train, feature_names=x_train.columns.values)
-
-# hurr durr df_test has categoiral values still
 dtest = xgb.DMatrix(x_test)
-model = xgb.train(dict(xgb_params, silent=0), dtrain, num_boost_round=100, feval=xgb_r2_score, maximize=True)
+
+# xgboost, cross-validation
+cv_result = xgb.cv(xgb_params,
+                   dtrain,
+                   num_boost_round=500, # increase to have better results (~700)
+                   early_stopping_rounds=50,
+                   verbose_eval=50,
+                   show_stdv=False
+                  )
+
+num_boost_rounds = len(cv_result)
+print("number of rounds {}" .format(num_boost_rounds))
+
+# dtrain = xgb.DMatrix(x_train, y_train, feature_names=x_train.columns.values)
+
+# dtest = xgb.DMatrix(x_test)
+model = xgb.train(dict(xgb_params, silent=0), dtrain, num_boost_round=num_boost_rounds, feval=xgb_r2_score, maximize=True)
+
+# thresholds = sorted(model.get_score(importance_type='gain').items(), key=lambda x: x[1])
+# # print(model.get_score(importance_type = 'gain')
+#
+# for thresh in thresholds:
+#     # select features using threshold
+#     selection = SelectFromModel(model, threshold=thresh, prefit=True)
+#     select_X_train = selection.transform(x_train)
+#     # train model
+#     dtrain = xgb.DMatrix(select_X_train, y_train, feature_names=select_X_train.columns.values)
+#     selection_model = xgb.train(dict(xgb_params, silent=0), dtrain, num_boost_round=100, feval=xgb_r2_score, maximize=True)
+#
+#     # eval model
+#     select_X_test = selection.transform(x_test)
+#     dtest = xgb.DMatrix(select_X_test)
+#     y_predict = selection_model.predict(dtest)
+
 y_predict = model.predict(dtest)
 '''R2 Score on the entire Train data'''
 
 print('R2 score on train data:')
 print(r2_score(y_train,model.predict(dtrain)))
 
-# '''R2 Score on the Test data'''
-#
-# print('R2 score on test data:')
-# print(r2_score(y_test,y_predict))
-
 
 sub = pd.DataFrame()
 sub['ID'] = df_test['ID']
 sub['y'] = y_predict
-sub.to_csv('baseline_model.csv', index=False)
+sub.to_csv('model.csv', index=False)
 
 # # plot the Distribution of target values
 # sns.distplot(y_train[y_train<170],bins=100,kde=False)
