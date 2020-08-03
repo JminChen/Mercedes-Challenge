@@ -8,6 +8,8 @@ from sklearn.metrics import r2_score
 from numpy import sort
 
 from sklearn.feature_selection import SelectFromModel
+from sklearn.ensemble.forest import RandomForestClassfier
+
 from sklearn.feature_selection import SelectKBest
 from sklearn.feature_selection import f_classif
 from sklearn.feature_selection import f_regression
@@ -53,14 +55,17 @@ def xgb_r2_score(preds, dtrain):
     labels = dtrain.get_label()
     return 'r2', r2_score(labels, preds)
 
+# kb = SelectKBest(score_func=f_regression, k=200)
+# kb.fit(x_train,y_train)
+# best_train = kb.transform(x_train)
+# best_test = kb.transform(x_test)
+
 # perform random trees to feature select before xgboost
-kb = SelectKBest(score_func=f_regression, k=200)
-kb.fit(x_train,y_train)
-best_train = kb.transform(x_train)
-best_test = kb.transform(x_test)
+select = SelectFromModel(RandomForestClassifier(n_estimators = 100))
+select.fit(x_train, y_train)
+selected_features= x_train.columns[(select.get_support())]
 
 
-# print("this is the new data {}" .format(remaining_features))
 
 
 # xgboost used since excels at small-medium sized tabular data and regression prediction
@@ -78,9 +83,12 @@ xgb_params = {
     'silent': 1
 }
 
+# testing
+dtrain = xgb.DMatrix(selected_features, y_train)
+dtest = xgb.DMatrix(x_test)
 
-dtrain = xgb.DMatrix(best_train, y_train)
-dtest = xgb.DMatrix(best_test)
+# dtrain = xgb.DMatrix(best_train, y_train)
+# dtest = xgb.DMatrix(best_test)
 
 # xgboost, cross-validation
 cv_result = xgb.cv(xgb_params,
