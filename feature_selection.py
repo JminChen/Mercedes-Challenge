@@ -8,6 +8,9 @@ from sklearn.metrics import r2_score
 from numpy import sort
 
 from sklearn.feature_selection import SelectFromModel
+from sklearn.feature_selection import SelectKBest
+from sklearn.feature_selection import f_classif
+from sklearn.feature_selection import f_regression
 
 # color = sns.color_palette()
 
@@ -50,6 +53,16 @@ def xgb_r2_score(preds, dtrain):
     labels = dtrain.get_label()
     return 'r2', r2_score(labels, preds)
 
+# perform random trees to feature select before xgboost
+kb = SelectKBest(score_func=f_regression, k=200)
+kb.fit(x_train,y_train)
+best_train = kb.transform(x_train)
+best_test = kb.transform(x_test)
+
+
+# print("this is the new data {}" .format(remaining_features))
+
+
 # xgboost used since excels at small-medium sized tabular data and regression prediction
 # perhaps try other models random forest,
 xgb_params = {
@@ -65,14 +78,15 @@ xgb_params = {
     'silent': 1
 }
 
-dtrain = xgb.DMatrix(x_train, y_train, feature_names=x_train.columns.values)
-dtest = xgb.DMatrix(x_test)
+
+dtrain = xgb.DMatrix(best_train, y_train)
+dtest = xgb.DMatrix(best_test)
 
 # xgboost, cross-validation
 cv_result = xgb.cv(xgb_params,
                    dtrain,
-                   num_boost_round=500, # increase to have better results (~700)
-                   early_stopping_rounds=50,
+                   num_boost_round=500, # determines number of trees to boost and build, considering increasing
+                   early_stopping_rounds=50, # if 50 rounds of no improvement then terminate
                    verbose_eval=50,
                    show_stdv=False
                   )
@@ -86,20 +100,22 @@ print("number of rounds {}" .format(num_boost_rounds))
 model = xgb.train(dict(xgb_params, silent=0), dtrain, num_boost_round=num_boost_rounds, feval=xgb_r2_score, maximize=True)
 
 # thresholds = sorted(model.get_score(importance_type='gain').items(), key=lambda x: x[1])
-# # print(model.get_score(importance_type = 'gain')
-#
+# print(model.get_score(importance_type = 'gain')
+
 # for thresh in thresholds:
-#     # select features using threshold
-#     selection = SelectFromModel(model, threshold=thresh, prefit=True)
-#     select_X_train = selection.transform(x_train)
-#     # train model
-#     dtrain = xgb.DMatrix(select_X_train, y_train, feature_names=select_X_train.columns.values)
-#     selection_model = xgb.train(dict(xgb_params, silent=0), dtrain, num_boost_round=100, feval=xgb_r2_score, maximize=True)
-#
-#     # eval model
-#     select_X_test = selection.transform(x_test)
-#     dtest = xgb.DMatrix(select_X_test)
-#     y_predict = selection_model.predict(dtest)
+# select features using threshold
+    # selection = SelectFromModel(model, threshold=0.5, prefit=True)
+    # selection.fit(x_train,y_train)
+    # select_x = selection.transform(x_train)
+
+    # # train model
+    # dtrain = xgb.DMatrix(select_xxs, y_train, feature_names=select_x.columns.values)
+    # selection_model = xgb.train(dict(xgb_params, silent=0), dtrain, num_boost_round=100, feval=xgb_r2_score, maximize=True)
+    #
+    # # eval model
+    # select_X_test = selection.transform(x_test)
+    # dtest = xgb.DMatrix(select_X_test)
+    # y_predict = selection_model.predict(dtest)
 
 y_predict = model.predict(dtest)
 '''R2 Score on the entire Train data'''
@@ -117,8 +133,6 @@ sub.to_csv('model.csv', index=False)
 # # plot the Distribution of target values
 # sns.distplot(y_train[y_train<170],bins=100,kde=False)
 # plt.show()
-
-
 
 # plot the important features #
 fig, ax = plt.subplots(figsize=(12,18))

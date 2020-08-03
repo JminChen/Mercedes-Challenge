@@ -71,11 +71,15 @@ dtest = xgb.DMatrix(x_test)
 # xgboost, cross-validation
 cv_result = xgb.cv(xgb_params,
                    dtrain,
-                   num_boost_round=500, # increase to have better results (~700)
-                   early_stopping_rounds=50,
+                   num_boost_round=500, # determines number of trees to boost and build, considering increasing
+                   early_stopping_rounds=50, # if 50 rounds of no improvement then terminate
+                   nfold = 10, # nfold  the original dataset is randomly partitioned into nfold equal size subsamples.
+                   #seed = 42, # random seed
                    verbose_eval=50,
                    show_stdv=False
                   )
+
+
 
 num_boost_rounds = len(cv_result)
 print("number of rounds {}" .format(num_boost_rounds))
@@ -85,21 +89,6 @@ print("number of rounds {}" .format(num_boost_rounds))
 # dtest = xgb.DMatrix(x_test)
 model = xgb.train(dict(xgb_params, silent=0), dtrain, num_boost_round=num_boost_rounds, feval=xgb_r2_score, maximize=True)
 
-# thresholds = sorted(model.get_score(importance_type='gain').items(), key=lambda x: x[1])
-# # print(model.get_score(importance_type = 'gain')
-#
-# for thresh in thresholds:
-#     # select features using threshold
-#     selection = SelectFromModel(model, threshold=thresh, prefit=True)
-#     select_X_train = selection.transform(x_train)
-#     # train model
-#     dtrain = xgb.DMatrix(select_X_train, y_train, feature_names=select_X_train.columns.values)
-#     selection_model = xgb.train(dict(xgb_params, silent=0), dtrain, num_boost_round=100, feval=xgb_r2_score, maximize=True)
-#
-#     # eval model
-#     select_X_test = selection.transform(x_test)
-#     dtest = xgb.DMatrix(select_X_test)
-#     y_predict = selection_model.predict(dtest)
 
 y_predict = model.predict(dtest)
 '''R2 Score on the entire Train data'''
