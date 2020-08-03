@@ -8,7 +8,7 @@ from sklearn.metrics import r2_score
 from numpy import sort
 
 from sklearn.feature_selection import SelectFromModel
-from sklearn.ensemble.forest import RandomForestClassfier
+from sklearn.ensemble import RandomForestRegressor
 
 from sklearn.feature_selection import SelectKBest
 from sklearn.feature_selection import f_classif
@@ -55,18 +55,24 @@ def xgb_r2_score(preds, dtrain):
     labels = dtrain.get_label()
     return 'r2', r2_score(labels, preds)
 
-# kb = SelectKBest(score_func=f_regression, k=200)
-# kb.fit(x_train,y_train)
-# best_train = kb.transform(x_train)
-# best_test = kb.transform(x_test)
+kb = SelectKBest(score_func=f_regression, k=200)
+kb.fit(x_train,y_train)
+best_train = kb.transform(x_train)
+best_test = kb.transform(x_test)
 
-# perform random trees to feature select before xgboost
-select = SelectFromModel(RandomForestClassifier(n_estimators = 100))
-select.fit(x_train, y_train)
-selected_features= x_train.columns[(select.get_support())]
-
-
-
+# # perform random trees to feature select before xgboost
+# slt = RandomForestRegressor(n_estimators=100, max_features='sqrt', max_depth=20, n_jobs=-1)
+# slt.fit(x_train, y_train)
+# select = SelectFromModel(slt)
+# select.fit(x_train, y_train)
+# # selected_features= x_train.columns[(select.get_support())]
+# important_feat_train = select.transform(x_train)
+# important_feat_test = select.transform(x_test)
+#
+# kb = SelectKBest(score_func=f_regression, k=40)
+# kb.fit(important_feat_train,y_train)
+# best_train = kb.transform(important_feat_train)
+# best_test = kb.transform(important_feat_test)
 
 # xgboost used since excels at small-medium sized tabular data and regression prediction
 # perhaps try other models random forest,
@@ -83,12 +89,12 @@ xgb_params = {
     'silent': 1
 }
 
-# testing
-dtrain = xgb.DMatrix(selected_features, y_train)
-dtest = xgb.DMatrix(x_test)
+# # testing
+# dtrain = xgb.DMatrix(important_feat_train, y_train)
+# dtest = xgb.DMatrix(important_feat_test)
 
-# dtrain = xgb.DMatrix(best_train, y_train)
-# dtest = xgb.DMatrix(best_test)
+dtrain = xgb.DMatrix(best_train, y_train)
+dtest = xgb.DMatrix(best_test)
 
 # xgboost, cross-validation
 cv_result = xgb.cv(xgb_params,
