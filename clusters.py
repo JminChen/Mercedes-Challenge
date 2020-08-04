@@ -36,48 +36,24 @@ for column in usable_columns:
         x_train.drop(column, axis=1, inplace=True) # Column with only one value is useless so we drop it
         x_test.drop(column, axis=1, inplace=True)
 
-# class cluster_target_encoder:
-#     def make_encoding(self,df):
-#         self.encoding = df.groupby('X')['y'].mean()
-#     def fit(self,X,y):
-#         df = pd.DataFrame(columns=['X','y'],index=X.index)
-#         df['X'] = X
-#         df['y'] = y
-#         self.make_encoding(df)
-#         clust = KMeans(4,random_state=0)
-#         labels = clust.fit_predict(self.encoding[df['X'].values].values.reshape(-1,1))
-#         df['labels'] = labels
-#         self.clust_encoding = df.groupby('X')['labels'].median()
-#     def transform(self,X):
-#         res = X.map(self.clust_encoding).astype(float)
-#         return res
-#     def fit_transform(self,X,y):
-#         self.fit(X,y)
-#         return self.transform(X)
-#
-#
-# encoder = cluster_target_encoder(nclusters=4,seed=4)
-# labels_train = encoder.fit_transform(x_train['X0'],train['y'])
-# labels_test = encoder.transform(X_test['X0'])
-# est = xgb.XGBClassifier()
-# est.fit(x_train.select_dtypes(include=[np.number]),labels_train)
-# labels_test[np.isnan(labels_test)] = est.predict(
-#     x_test.select_dtypes(include=[np.number]))[np.isnan(labels_test)]
-# x_train['labels'] = labels_train
-# x_test['labels'] = labels_test
 
 cluster = KMeans(4,random_state=0)
 # group each object in dataset by their X0 values and find the mean y values of those groups
 group = df_train.groupby('X0')['y'].mean()
 group_2D = group[df_train['X0'].values].values.reshape(-1,1) # change to 2D array to satisfy sklearn KMean
-labels = cluster.fit_predict(group_2D) # predict 4 clusters
+labels = cluster.fit_predict(group_2D) # predict 4 clusters based y means of X0 values
 temp = pd.DataFrame()
 temp['X0'] = df_train['X0'].values
 temp['Cluster Label'] = labels
-cluster_med = temp.groupby('X0')['Cluster Label'].median()
+cluster_med = temp.groupby('X0')['Cluster Label'].median() # group each X0 value and find the median of their clusters
 
 cluster_train = df_train['X0'].map(cluster_med).astype(float)
 cluster_test = df_test['X0'].map(cluster_med).astype(float)
+
+# est = xgb.XGBClassifier()
+# est.fit(x_train.select_dtypes(include=[np.number]),cluster_train)
+# cluster_test[np.isnan(cluster_test)] = est.predict(
+#     x_test.select_dtypes(include=[np.number]))[np.isnan(cluster_test)]
 
 # # print(group)
 # # clust.fit_predict()
@@ -91,7 +67,8 @@ plt.title('Train targets distribution for all clusters')
 plt.xlim((60,170))
 plt.show()
 
-
+#colsample_bytree
+# maybe split data according to clusters and train model on each cluster
 
 # # plot the Distribution of target values
 # sns.distplot(y_train[y_train<170],bins=100,kde=False)
