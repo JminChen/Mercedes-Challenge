@@ -8,6 +8,11 @@ from sklearn.model_selection import cross_val_score,cross_val_predict
 from sklearn.preprocessing import LabelEncoder
 from sklearn.metrics import r2_score
 
+from sklearn.feature_selection import SelectKBest
+from sklearn.feature_selection import f_classif
+from sklearn.feature_selection import f_regression
+from sklearn.feature_selection import SelectFromModel
+from sklearn import preprocessing
 
 import pylab
 
@@ -40,8 +45,11 @@ cluster_med = temp.groupby('X0')['Cluster Label'].median() # group each X0 value
 cluster_train = df_train['X0'].map(cluster_med)
 cluster_test = df_test['X0'].map(cluster_med)
 
+# df_train['Cluster'] = cluster_train
+# df_test['Cluster'] = cluster_test
 x_train['Cluster'] = cluster_train
 x_test['Cluster'] = cluster_test
+# print(x_test['Cluster'])
 
 # est = xgb.XGBClassifier()
 # est.fit(x_train.select_dtypes(include=[np.number]),cluster_train)
@@ -64,6 +72,7 @@ for column in usable_columns:
     # convert categorical features into numeric
         x_train[column] = lbl.fit_transform(x_train[column])
         x_test[column] = lbl.fit_transform(x_test[column])
+
         # lbl.fit(list(x_train[column].values) + list(x_test[column].values))
         # x_train[column] = lbl.transform(list(x_train[column].values))
         # x_test[column] = lbl.transform(list(x_test[column].values))
@@ -75,6 +84,15 @@ for column in usable_columns:
 
 #colsample_bytree
 # maybe split data according to clusters and train model on each cluster
+
+kb = SelectKBest(score_func=f_regression, k=200)
+kb.fit(x_train,y_train)
+best_train = kb.transform(x_train)
+# CONTAINS NAN VALUES PROBABLY FROM objets in test set that couldnt be assigned to a cluster
+# print(x_train['Cluster'].isnull().values.any())
+# print(x_test['Cluster'].isnull().sum())
+x_test.fillna(4,inplace=True)
+best_test = kb.transform(x_test)
 
 # xgboost used since excels at small-medium sized tabular data and regression prediction
 # perhaps try other models random forest,
@@ -91,8 +109,46 @@ xgb_params = {
     'silent': 1
 }
 
-dtrain = xgb.DMatrix(x_train, y_train, feature_names=x_train.columns.values)
-dtest = xgb.DMatrix(x_test)
+# #split data
+# c1 = df_train[df_train['Cluster']==0]
+# c2 = df_train.loc[df_train['Cluster']==1]
+# c3 = df_train.loc[df_train['Cluster']==2]
+# c4 = df_train.loc[df_train['Cluster']==3]
+#
+# x1 = c1[list(set(c1.columns) - set(['y']))]
+# y1 = c1['y']
+# x2 = c2[list(set(c2.columns) - set(['y']))]
+# y2 = c2['y']
+# x3 = c3[list(set(c3.columns) - set(['y']))]
+# y3 = c3['y']
+# x4 = c4[list(set(c4.columns) - set(['y']))]
+# y4 = c4['y']
+#
+# x1_test = df_test[df_test['Cluster']==0]
+# print(x1_test)
+# ID1 = x1_test['ID']
+# x2_test = df_test.loc[df_test['Cluster']==1]
+# x3_test = df_test.loc[df_test['Cluster']==2]
+# x4_test = df_test.loc[df_test['Cluster']==3]
+
+# x1_test = df_train.loc[df_test['Cluster']==0]
+# x2_test = df_train.loc[df_test['Cluster']==1]
+# x3_test = df_train.loc[df_test['Cluster']==2]
+# x4_test = df_train.loc[df_test['Cluster']==3]
+
+#
+# dtrain = xgb.DMatrix(x1, y1,feature_names=x1.columns.values)
+# dtest = xgb.DMatrix(x1_test)
+
+# dtrain1 = xgb.DMatrix(x1, y1)
+# dtrain1 = xgb.DMatrix(x1, y1)
+# dtrain1 = xgb.DMatrix(x1, y1)
+
+dtrain = xgb.DMatrix(best_train, y_train)
+dtest = xgb.DMatrix(best_test)
+
+# dtrain = xgb.DMatrix(df_train, y_train, feature_names=x_train.columns.values)
+# dtest = xgb.DMatrix(x_test)
 
 # xgboost, cross-validation
 cv_result = xgb.cv(xgb_params,
@@ -104,17 +160,21 @@ cv_result = xgb.cv(xgb_params,
                    verbose_eval=50,
                    show_stdv=False
                   )
-
-
-
 num_boost_rounds = len(cv_result)
-print("number of rounds {}" .format(num_boost_rounds))
 
-# dtrain = xgb.DMatrix(x_train, y_train, feature_names=x_train.columns.values)
 
-# dtest = xgb.DMatrix(x_test)
 model = xgb.train(dict(xgb_params, silent=0), dtrain, num_boost_round=num_boost_rounds, feval=xgb_r2_score, maximize=True)
+y_predict = model.predict(dtest)
 
+
+# num_boost_rounds = len(cv_result)
+# print("number of rounds {}" .format(num_boost_rounds))
+#
+# # dtrain = xgb.DMatrix(x_train, y_train, feature_names=x_train.columns.values)
+#
+# # dtest = xgb.DMatrix(x_test)
+# model = xgb.train(dict(xgb_params, silent=0), dtrain, num_boost_round=num_boost_rounds, feval=xgb_r2_score, maximize=True)
+#
 y_predict = model.predict(dtest)
 '''R2 Score on the entire Train data'''
 
@@ -126,10 +186,10 @@ sub['ID'] = df_test['ID']
 sub['y'] = y_predict
 sub.to_csv('model.csv', index=False)
 
-# # plot the Distribution of target values
-# sns.distplot(y_train[y_train<170],bins=100,kde=False)
-# plt.show()
-
+# # # plot the Distribution of target values
+# # sns.distplot(y_train[y_train<170],bins=100,kde=False)
+# # plt.show()
+#
 # plot the important features #
 fig, ax = plt.subplots(figsize=(12,18))
 xgb.plot_importance(model, max_num_features=50, height=0.8, ax=ax)
