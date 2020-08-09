@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn import preprocessing
 
-
+# this file prints the distribution of each of the categorical values
 train_df = pd.read_csv("./train.csv")
 test_df = pd.read_csv("./test.csv")
 

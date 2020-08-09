@@ -14,7 +14,6 @@ from sklearn.feature_selection import f_regression
 from sklearn.feature_selection import SelectFromModel
 from sklearn import preprocessing
 
-import pylab
 
 def xgb_r2_score(preds, dtrain):
     labels = dtrain.get_label()
@@ -186,10 +185,10 @@ sub['ID'] = df_test['ID']
 sub['y'] = y_predict
 sub.to_csv('model.csv', index=False)
 
-# # # plot the Distribution of target values
-# # sns.distplot(y_train[y_train<170],bins=100,kde=False)
-# # plt.show()
-#
+# # plot the Distribution of target values
+# sns.distplot(y_train[y_train],bins=100,kde=False)
+# plt.show()
+
 # plot the important features #
 fig, ax = plt.subplots(figsize=(12,18))
 xgb.plot_importance(model, max_num_features=50, height=0.8, ax=ax)

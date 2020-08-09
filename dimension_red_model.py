@@ -22,6 +22,7 @@ def xgb_r2_score(preds, dtrain):
     labels = dtrain.get_label()
     return 'r2', r2_score(labels, preds)
 
+pd.set_option('mode.chained_assignment', None)
 
 df_train = pd.read_csv("./train.csv")
 df_test = pd.read_csv("./test.csv")

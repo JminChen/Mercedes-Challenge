@@ -17,6 +17,8 @@ from sklearn.cluster import FeatureAgglomeration
 
 from sklearn.preprocessing import LabelEncoder
 
+pd.set_option('mode.chained_assignment', None)
+
 # function for finding r squared
 def xgb_r2_score(preds, dtrain):
     labels = dtrain.get_label()
